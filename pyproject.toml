@@ -1,0 +1,32 @@
+[project]
+name = "peas-agent-skills"
+version = "0.1.0"
+description = "PEAS Agent skills — load SKILL.md workflows and scaffold skill scrolls"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/mz038197/peas-agent-skills"
+
+[project.scripts]
+peas-agent-skills = "peas_agent_skills.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/peas_agent_skills"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/peas_agent_skills/templates" = "peas_agent_skills/templates"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
