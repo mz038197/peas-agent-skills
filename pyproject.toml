@@ -1,7 +1,7 @@
 [project]
 name = "peas-agent-skills"
 version = "0.1.0"
-description = "PEAS Agent skills — load SKILL.md workflows and scaffold skill scrolls"
+description = "PEAS Agent skills — load SKILL.md workflows into a system prompt"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []

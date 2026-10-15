@@ -46,12 +46,20 @@ class SkillsLoader:
         workspace: Path,
         *,
         builtin_dir: Path | None = None,
+        skills_dir: Path | None = None,
+        include_builtin: bool = True,
     ) -> None:
         self.workspace = workspace.resolve()
-        self.workspace_skills = self.workspace / "skills"
-        self.builtin_skills = (
-            builtin_dir.resolve() if builtin_dir else self.workspace / "builtin_skills"
+        self.workspace_skills = (
+            skills_dir.resolve() if skills_dir else self.workspace / "skills"
         )
+        self.builtin_skills: Path | None = None
+        if include_builtin:
+            self.builtin_skills = (
+                builtin_dir.resolve()
+                if builtin_dir
+                else self.workspace / "builtin_skills"
+            )
 
     def _skill_path_for_read(self, skill_file: Path) -> str:
         resolved = skill_file.resolve()
@@ -117,3 +125,24 @@ def build_skills_summary(entries: list[SkillEntry]) -> str:
         return ""
     lines = [f"- **{e.name}** — {e.description} `{e.path}`" for e in summarized]
     return "\n".join(lines)
+
+
+SKILLS_INTRO = (
+    "下列技能可擴充你的能力。若要使用某技能，請用 read_file 讀取清單中"
+    "該技能路徑下的 SKILL.md。\n"
+    "若該技能需額外套件或環境，請先依 SKILL.md 或專案說明安裝相依項目後再操作。\n\n"
+)
+
+
+def build_skills_prompt(entries: list[SkillEntry]) -> str:
+    """Always-on skills contribute their body; every other skill one summary line."""
+    parts: list[str] = []
+    always_on = [e for e in entries if e.always]
+    if always_on:
+        body = "\n\n---\n\n".join(f"### Skill: {e.name}\n\n{e.body}" for e in always_on)
+        parts.append(f"# Active Skills\n\n{body}")
+
+    summary = build_skills_summary(entries)
+    if summary:
+        parts.append("# Skills\n\n" + SKILLS_INTRO + summary)
+    return "\n\n---\n\n".join(parts)

@@ -3,51 +3,38 @@
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
-from peas_agent_skills.api import TEMPLATES_DIR, list_skill_names, load_skill, skills_root
+from peas_agent_skills.api import list_skill_names, load_skill, skills_root
 
+SKILL_FORMAT_HINT = """\
+Add a skill as .agents/skills/<name>/SKILL.md, for example:
 
-def init_skills(root: Path) -> tuple[list[str], list[str]]:
-    """Copy bundled templates into skills/. Existing SKILL.md files are left alone."""
-    created: list[str] = []
-    skipped: list[str] = []
-    destination = skills_root(root)
-    destination.mkdir(parents=True, exist_ok=True)
+---
+description: When the Agent should use this skill
+---
+# Steps the Agent should follow
 
-    if not TEMPLATES_DIR.is_dir():
-        return created, skipped
+description: one line telling the Agent when to read this skill.
+always: true puts the whole skill into the system prompt every time;
+otherwise the Agent only sees name, description and path, and reads the file when needed.
 
-    for source_dir in sorted(TEMPLATES_DIR.iterdir(), key=lambda p: p.name):
-        skill_file = source_dir / "SKILL.md"
-        if not source_dir.is_dir() or not skill_file.is_file():
-            continue
-        target = destination / source_dir.name / "SKILL.md"
-        rel = target.relative_to(root).as_posix()
-        if target.is_file():
-            skipped.append(rel)
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(skill_file, target)
-        created.append(rel)
-    return created, skipped
+Your Agent reads these skills with load_all_skills().
+An old skills/ folder is no longer read: move its skills into .agents/skills/."""
 
 
 def _cmd_init(root: Path) -> int:
-    created, skipped = init_skills(root)
-    print("Skill Scrolls unlocked!")
+    folder = skills_root(root)
+    if folder.is_dir():
+        print("⚠️ .agents/skills/ already exists")
+        if (root / "skills").is_dir():
+            print("An old skills/ folder is no longer read: move its skills into .agents/skills/.")
+        return 0
+    folder.mkdir(parents=True)
+    print("✅ Created .agents/skills/")
     print()
-    for rel in created:
-        print(f"✅ Created {rel}")
-    for rel in skipped:
-        print(f"⚠️ Skipped {rel} because it already exists")
-    if not created and not skipped:
-        print("No skill templates found in the package.")
-        return 1
-    print()
-    print("Your Agent can now read these skills with load_all_skills().")
+    print(SKILL_FORMAT_HINT)
     return 0
 
 
@@ -75,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cwd", default="", help="Project root (default: current directory)")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("init", help="Create missing skills/*/SKILL.md from templates")
+    sub.add_parser("init", help="Create .agents/skills/ if it is missing")
     sub.add_parser("list", help="List skill folder names")
     show = sub.add_parser("show", help="Print one SKILL.md")
     show.add_argument("name")

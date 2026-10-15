@@ -1,17 +1,15 @@
-"""Read a project's skills/ folder for a system prompt."""
+"""Read a project's .agents/skills/ folder for a system prompt."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from peas_agent_skills.loader import split_frontmatter
-
-TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+from peas_agent_skills.loader import SkillsLoader, build_skills_prompt
 
 
 def skills_root(root: Path | None = None) -> Path:
     base = Path.cwd() if root is None else Path(root)
-    return base / "skills"
+    return base / ".agents" / "skills"
 
 
 def list_skill_names(root: Path | None = None) -> list[str]:
@@ -37,14 +35,6 @@ def load_skill(name: str, root: Path | None = None) -> str | None:
 
 
 def load_all_skills(root: Path | None = None) -> str:
-    chunks: list[str] = []
-    for name in list_skill_names(root):
-        text = load_skill(name, root)
-        if text is None:
-            continue
-        _, body = split_frontmatter(text)
-        content = (body or text).strip()
-        if not content:
-            continue
-        chunks.append(f"## {name}\n\n{content}")
-    return "\n\n".join(chunks)
+    base = Path.cwd() if root is None else Path(root)
+    loader = SkillsLoader(base, skills_dir=skills_root(base), include_builtin=False)
+    return build_skills_prompt(loader.list_skills())
